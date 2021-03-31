@@ -1,0 +1,22 @@
+{
+  "name": "deliverable2",
+  "version": "1.0.0",
+  "description": "hotel booking project",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Jspud028/Deliverable2.git"
+  },
+  "author": "justin spudic, nader el-ghotmi, gabriel granata",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Jspud028/Deliverable2/issues"
+  },
+  "homepage": "https://github.com/Jspud028/Deliverable2#readme",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
+}
