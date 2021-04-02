@@ -178,23 +178,23 @@ app.put(`Customer`, async(req, res)=>{
 })
 
 app.put(`BookingInfo`, async(req, res)=>{
-    if (req.query.booking_id) {
-        await pool.query(`UPDATE BookingInfo SET booking_id = ${req.query.booking_id} WHERE room_id = ${req.query.room_id} `)
+    if (req.query.room_id) {
+        await pool.query(`UPDATE BookingInfo SET room_id = ${req.query.room_id} WHERE booking_id = ${req.query.booking_id} `)
     }
     if (req.query.room_type) {
-        await pool.query(`UPDATE BookingInfo SET room_type = ${req.query.room_type} WHERE room_id = ${req.query.room_id} `)
+        await pool.query(`UPDATE BookingInfo SET room_type = ${req.query.room_type} WHERE booking_id = ${req.query.booking_id} `)
     }
     if (req.query.num_occupants) {
-        await pool.query(`UPDATE BookingInfo SET num_occupants = ${req.query.num_occupants} WHERE room_id = ${req.query.room_id} `)
+        await pool.query(`UPDATE BookingInfo SET num_occupants = ${req.query.num_occupants} WHERE booking_id = ${req.query.booking_id} `)
     }
     if (req.query.date_check_in) {
-        await pool.query(`UPDATE BookingInfo SET date_check_in = ${req.query.date_check_in} WHERE room_id = ${req.query.room_id} `)
+        await pool.query(`UPDATE BookingInfo SET date_check_in = ${req.query.date_check_in} WHERE booking_id = ${req.query.booking_id} `)
     }
     if (req.query.date_check_out) {
-        await pool.query(`UPDATE BookingInfo SET date_check_out = ${req.query.date_check_out} WHERE room_id = ${req.query.room_id} `)
+        await pool.query(`UPDATE BookingInfo SET date_check_out = ${req.query.date_check_out} WHERE booking_id = ${req.query.booking_id} `)
     }
     if (req.query.renting_paid) {
-        await pool.query(`UPDATE BookingInfo SET renting_paid = ${req.query.renting_paid} WHERE room_id = ${req.query.room_id} `)
+        await pool.query(`UPDATE BookingInfo SET renting_paid = ${req.query.renting_paid} WHERE booking_id = ${req.query.booking_id} `)
     }
     
 
