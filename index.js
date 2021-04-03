@@ -222,7 +222,7 @@ app.get('/booking_info', async (req, res) => {
 app.get('/bookinginfo', async (req, res) => {
     await pool.query(
         `INSERT INTO BookingInfo(room_type, num_occupants, date_check_in, date_check_out, renting_paid)VALUES
-        (${req.query.room_type}, ${req.query.num_occupants}, ${req.query.date_check_in}, ${req.query.date_check_out}, ${req.query.renting_paid},)`
+        (${req.query.room_type}, ${req.query.num_occupants}, ${req.query.date_check_in}, ${req.query.date_check_out}, ${req.query.renting_paid})`
       );
 }) 
 
@@ -242,3 +242,33 @@ const pool = new Pool({
   pool.query('SELECT NOW()', (err, res) => {
     console.log(err, res)
   })
+
+  //-------------------------------CUSTOMER COMMANDS--------------------------------------------------------------------
+
+  app.get('/check_available_rooms', async (req, res) => {
+    await pool.query(
+        `SELECT * 
+        FROM ROOMS 
+        WHERE Room_ID NOT IN 
+        (
+            SELECT Room_ID 
+            FROM   BOOKINGinfo B
+                   
+            WHERE  (date_check_in <= ${req.query.date_check_in} AND date_check_out >= ${req.query.date_check_in})
+                   OR (date_check_in < ${req.query.date_check_out} AND date_check_out >= ${req.query.date_check_out} )
+                   OR (${req.query.date_check_in} <= date_check_in AND ${req.query.date_check_out} >= date_check_in)
+        )`
+      );
+}) 
+
+app.get('/check_availability', async (req, res) => {
+    let result = await pool.query(`SELECT room_id, customer_id FROM Books WHERE employee_id = ${req.query.employee_id} AND customer_id IS null`)
+    
+    res.send(JSON.stringify(result["rows"]))
+}) 
+
+app.get('/check_booked', async (req, res) => {
+    let result = await pool.query(`SELECT room_id, customer_id FROM Books WHERE employee_id = ${req.query.employee_id} AND customer_id IS NOT null`)
+    
+    res.send(JSON.stringify(result["rows"]))
+}) 
