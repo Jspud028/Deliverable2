@@ -4,9 +4,18 @@ const express = require('express');
 const app = express()
 const port = 3000
 
+const pool = new Pool({
+    user: process.env.USER,
+    host: 'web0.eecs.uottawa.ca',
+    database: 'group_b01_g03',
+    password: process.env.PASS,
+    port: 15432,
+})
+
 app.get('/', (req, res) => {
     res.send('Hello World!');
 })
+
 
 app.listen(port, () => {
     console.log(`Example app listening at http://localhost:${port}`)
@@ -231,21 +240,11 @@ app.get('/history', async (req, res) => {
     
     res.send(JSON.stringify(result["rows"]))
 }) 
-const pool = new Pool({
-    user: process.env.USER,
-    host: 'web0.eecs.uottawa.ca',
-    database: 'group_b01_g03',
-    password: process.env.PASS,
-    port: 15432,
-  })
 
-  pool.query('SELECT NOW()', (err, res) => {
-    console.log(err, res)
-  })
 
   //-------------------------------CUSTOMER COMMANDS--------------------------------------------------------------------
 
-  app.get('/check_available_rooms', async (req, res) => {
+app.get('/check_available_rooms', async (req, res) => {
     await pool.query(
         `SELECT * 
         FROM ROOMS 

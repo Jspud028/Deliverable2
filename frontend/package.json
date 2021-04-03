@@ -12,6 +12,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "axios": "^0.21.1",
+    "dotenv": "^8.2.0",
+    "pg": "^8.5.1",
     "prompt-sync": "^4.2.0"
   }
 }

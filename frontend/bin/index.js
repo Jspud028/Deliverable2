@@ -1,4 +1,13 @@
 const prompt = require('prompt-sync')({sigint: true});
+require('dotenv').config()
+const { Pool, Client } = require('pg')
+const pool = new Pool({
+    user: process.env.USER,
+    host: 'web0.eecs.uottawa.ca',
+    database: 'group_b01_g03',
+    password: process.env.PASS,
+    port: 15432,
+})
 
 welcome()
 
@@ -23,9 +32,12 @@ function welcome() {
     }
 }
 
-function admin() {
+async function admin() {
     console.log("Welcome Admin");
     console.log("Here are the current Hotel Brands in the database");
+    
+    let result = await pool.query('SELECT * FROM HotelBrand');
+    console.log(result['rows']);
 }
 
 function employee() {
