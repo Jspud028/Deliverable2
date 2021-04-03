@@ -9,7 +9,14 @@ const pool = new Pool({
     port: 15432,
 })
 
-welcome()
+try {
+    welcome()
+} catch (err) {
+    console.log(err);
+    console.log("Please try again");
+    welcome();
+}
+
 
 function welcome() {
     console.log("Welcome to the Hotel Booking Software");
@@ -172,7 +179,7 @@ async function chainOptions(chain_ids) {
         viewEmployees(chain_ids)
     } else if (selection == 5) {
         viewRooms(chain_ids)
-    } else if (selection == 6) {
+    } else if (selection == 'q') {
         admin();
     }
 }
@@ -191,7 +198,6 @@ async function editChain(chain_ids) {
     prov = prompt("Prov: ");
     zip = prompt("Zip: ");
     num_stars = prompt("Stars: ");
-    room_price = Number(prompt("Price: "));
     email = prompt("Email: ")
     parent_brand = prompt("Parent Brand: ");
 
@@ -206,17 +212,15 @@ async function deleteChain(chain_ids) {
 
     console.log("Enter the ID of the Chain you would like to Delete");
     selection = prompt();
-    while (!brand_ids.includes(Number(selection))) {
-        console.log("Please enter an ID from the Current Brands");
+    while (!chain_ids.includes(Number(selection))) {
+        console.log("Please enter an ID from the Current Chains");
         selection = prompt();
     }
     await pool.query(`DELETE FROM HotelBrand WHERE brand_id = ${Number(selection)}`);
     console.log("Brand Successfully Deleted");
 
 
-    const index = chain_ids.indexOf(Number(selection));
-    chain_ids.splice(index, 1);
-    chainOptions(chain_ids);
+    admin()
 
 }
 
@@ -231,15 +235,14 @@ async function insertChain() {
     prov = prompt("Prov: ");
     zip = prompt("Zip: ");
     num_stars = parseInt(prompt("Stars: "));
-    room_price = Number(prompt("Price: "));
     email = prompt("Email: ")
     parent_brand = prompt("Parent Brand: ");
     num_rooms = 0;
 
-    let chain = await pool.query(`Insert into HotelChain(chain_name, street_num, street_name, prov, zip, num_stars, num_rooms, room_price, email, parent_brand) 
-    VALUES('${chain_name}','${street_num}', '${street_name}', '${prov}', '${zip}', '${num_stars}', '${num_rooms}', '${room_price}', '${email}', '${parent_brand}')`);
+    let chain = await pool.query(`Insert into HotelChain(chain_name, street_num, street_name, prov, zip, num_stars, num_rooms, email, parent_brand) 
+    VALUES('${chain_name}','${street_num}', '${street_name}', '${prov}', '${zip}', '${num_stars}', '${num_rooms}', '${email}', '${parent_brand}')`);
     console.log("Chain Successfully Inserted");
-    console.log(admin);
+    admin()
 
 }
 
@@ -251,20 +254,192 @@ async function viewEmployees(chain_ids) {
         console.log("Please enter an ID from the current Brands");
         c_id = prompt();
     }
-    let result = await pool.query(`SELECT * FROM HotelChain c WHERE c.chain_id IN (SELECT chain_id FROM BelongsTo WHERE brand_id = ${b_id})`)
-    console.log(result['rows'])
-
-    let chain_ids = []
+    let result = await pool.query(`SELECT * FROM Employee e WHERE e.employee_id IN (SELECT employee_id FROM WorksAt WHERE chain_id = ${Number(c_id)})`)
+    let employee_ids = []
     result['rows'].forEach(row => {
-        chain_ids.push(row['chain_id']);
+        rooom_ids.push(row['employee_id'])
     })
-    chainOptions(chain_ids);
+
+    employeeOptions(employee_ids);
 
 }
 
-function employee() {
+async function viewRooms(chain_ids) {
+
+    console.log("Enter the ID of the Chain you would like to view Rooms for");
+    let c_id = prompt();
+    while (!chain_ids.includes(Number(c_id))) {
+        console.log("Please enter an ID from the current Brands");
+        c_id = prompt();
+    }
+    let result = await pool.query(`SELECT * FROM Room r WHERE r.chain_id = ${Number(c_id)}`)
+    let room_ids = []
+    result['rows'].forEach(row => {
+        rooom_ids.push(row['room_id'])
+    })
+
+    roomOptions(room_ids);
 
 }
+
+async function roomOptions(room_ids) {
+    console.log("1. Edit Room");
+    console.log("2. Delete Room");
+    console.log("3. Insert Room");
+    console.log("4. View Bookings");
+    console.log('q. Start Over');
+
+    let selection = prompt();
+    while (!['1', '2', '3', '4', 'q'].includes(selection)) {
+        console.log("Please Select an Option from the List");
+    }
+
+    if (selection == 1) {
+        editRoom(room_ids)
+    } else if (selection == 2) {
+        deleteRoom(room_ids)
+    } else if (selection == 3) {
+        insertRoom()
+    } else if (selection == 4) {
+        viewBookings(room_ids)
+    } else if (selection == 'q') {
+        admin();
+    }
+}
+
+async function editRoom(room_ids) {
+
+    console.log("Enter the ID of the Room you would like to Update");
+    selection = prompt();
+    while (!room_ids.includes(Number(selection))) {
+        console.log("Please enter an ID from the Current Chains");
+        selection = prompt();
+    }
+    inst_amenity = prompt("Chain Name: ");
+    room_capacity = Number(prompt("Room Capacity: "));
+    extendable = Boolean(prompt("Extendable? (True or False): "));
+    is_view = Boolean(prompt("View? (True or False):"));
+    room_price = Number(prompt("Price?: "));
+    room_type = prompt("Type?: ");
+
+    await pool.query(`UPDATE Room SET inst_amenity='${inst_amenity}', room_capacity='${room_capacity}', extendable='${extendable}',
+    room_price='${room_price}', room_type='${room_type}' WHERE room_id = ${Number(selection)}`);
+
+    admin();
+
+}
+
+async function deleteRoom(room_ids) {
+
+    console.log("Enter the ID of the Room you would like to Delete");
+    selection = prompt();
+    while (!room_ids.includes(Number(selection))) {
+        console.log("Please enter an ID from the Current Rooms");
+        selection = prompt();
+    }
+    await pool.query(`DELETE FROM Room WHERE room_id = ${Number(selection)}`);
+    console.log("Room Successfully Deleted");
+    admin();
+
+}
+
+async function insertRoom() {
+
+
+    console.log("IMPORTANT: CHAIN MUST HAVE EMPLOYEES TO ASSIGN TO ROOMS BEFORE ADDING A ROOM TO THE CHAIN");
+
+    inst_amenity = prompt("Chain Name: ");
+    room_capacity = Number(prompt("Room Capacity: "));
+    extendable = Boolean(prompt("Extendable? (True or False): "));
+    is_view = Boolean(prompt("View? (True or False):"));
+    room_price = Number(prompt("Price?: "));
+    room_type = prompt("Type?: ");
+
+    let chain = await pool.query(`Insert into Room(inst_amenity, room_capacity, extendable, is_view, room_price, room_type) 
+    VALUES('${inst_amenity}',${room_capacity}, ${extendable}, ${is_view}, ${room_price}, '${room_type}'`);
+    console.log("Room Successfully Inserted");
+    admin();
+}
+
+
+/* async function employeeOptions(room_ids) {
+    console.log("1. Edit Employee");
+    console.log("2. Delete Room");
+    console.log("3. Insert Room");
+    console.log("4. View Bookings");
+    console.log('q. Start Over');
+
+    let selection = prompt();
+    while (!['1', '2', '3', '4', 'q'].includes(selection)) {
+        console.log("Please Select an Option from the List");
+    }
+
+    if (selection == 1) {
+        editRoom(room_ids)
+    } else if (selection == 2) {
+        deleteRoom(room_ids)
+    } else if (selection == 3) {
+        insertRoom()
+    } else if (selection == 4) {
+        viewBookings(room_ids)
+    } else if (selection == 'q') {
+        admin();
+    }
+}
+
+async function editRoom(room_ids) {
+
+    console.log("Enter the ID of the Room you would like to Update");
+    selection = prompt();
+    while (!room_ids.includes(Number(selection))) {
+        console.log("Please enter an ID from the Current Chains");
+        selection = prompt();
+    }
+    inst_amenity = prompt("Chain Name: ");
+    room_capacity = Number(prompt("Room Capacity: "));
+    extendable = Boolean(prompt("Extendable? (True or False): "));
+    is_view = Boolean(prompt("View? (True or False):"));
+    room_price = Number(prompt("Price?: "));
+    room_type = prompt("Type?: ");
+
+    await pool.query(`UPDATE Room SET inst_amenity='${inst_amenity}', room_capacity='${room_capacity}', extendable='${extendable}',
+    room_price='${room_price}', room_type='${room_type}' WHERE room_id = ${Number(selection)}`);
+
+    admin();
+
+}
+
+async function deleteRoom(room_ids) {
+
+    console.log("Enter the ID of the Room you would like to Delete");
+    selection = prompt();
+    while (!room_ids.includes(Number(selection))) {
+        console.log("Please enter an ID from the Current Rooms");
+        selection = prompt();
+    }
+    await pool.query(`DELETE FROM Room WHERE room_id = ${Number(selection)}`);
+    console.log("Room Successfully Deleted");
+    admin();
+
+}
+
+async function insertRoom() {
+
+
+    console.log("IMPORTANT: CHAIN MUST HAVE EMPLOYEES TO ASSIGN TO ROOMS BEFORE ADDING A ROOM TO THE CHAIN");
+
+    inst_amenity = prompt("Chain Name: ");
+    room_capacity = Number(prompt("Room Capacity: "));
+    extendable = Boolean(prompt("Extendable? (True or False): "));
+    is_view = Boolean(prompt("View? (True or False):"));
+    room_price = Number(prompt("Price?: "));
+    room_type = prompt("Type?: ");
+
+    let chain = await pool.query(`Insert into Room(inst_amenity, room_capacity, extendable, is_view, room_price, room_type) 
+    VALUES('${inst_amenity}',${room_capacity}, ${extendable}, ${is_view}, ${room_price}, '${room_type}'`);
+    console.log("Room Successfully Inserted");
+    admin();
+} */
 
 function customer() {
     console.log("Are you a current customer or new customer?")
