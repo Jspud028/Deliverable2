@@ -625,6 +625,7 @@ async function customer() {
             console.log("Please try again with a valid SIN, or make a new account");
             customer();
         }
+        customerOptions(sin);
     } else if (choice == 2) {
         let first_name = prompt("First Name: ");
         let last_name = prompt("Last Name: ");
@@ -639,23 +640,25 @@ async function customer() {
         await pool.query(`INSERT INTO Customer(sin_num, first_name, last_name, address, date_registered) values
         ('${sin}', '${first_name}', '${last_name}', 
         '${address}', '${year_registered.toString()}-${month_registered.toString()}-${day_registered.toString()} `)
+        customerOptions(sin);
     }
-    customerOptions(sin);
 }
 
 async function customerOptions(sin) {
     console.log("1. Book a room.");
     console.log("2. Check-Out");
-    
+    console.log("q. Start Over");
     let choice = prompt();
     while (choice != 1 && choice != 2) {
         console.log("Please enter 1 or 2");
     }
     
     if (choice == 1) {
-
+        bookRoomCustomer(sin);
     } else if (choice == 2) {
         viewCustomerBookings(sin)
+    } else if (choice =='q'){
+        welcome();
     }
 
 
@@ -668,16 +671,99 @@ async function viewCustomerBookings(sin) {
         (SELECT r.room_id From Room r JOIN Books b ON b.customer_id = '${sin}')`);
     
     console.log(result['rows']);
+    let booking_ids = [];
+    result['rows'].forEach(row => {
+        booking_ids.push(row['booking_id']);
+    })
     
-    checkOut();
+    checkOut(booking_ids, sin);
     
 }
 
-async function checkOut() {
+async function checkOut(booking_ids, sin) {
     console.log("Select Booking You Would Like to Check Out Of")
     let booking_id = Number(prompt());
-
+    while (!booking_ids.includes(Number(booking_id))){
+        console.log("Must be a valid Booking");
+        booking_id = prompt();
+    }
     await pool.query(`UPDATE BookingInfo SET renting=False where booking_id=${booking_id}`);
 
+
     console.log("Successfully Checked Out.")
+    welcome()
+}
+
+async function bookRoomCustomer(sin) {
+    console.log("Welcome to Our Room Booking Software. The available Hotels to book at are displayed below.");
+
+    let result = await pool.query(`SELECT * FROM HOTELCHAIN`);
+    console.log(result['rows']);
+
+    chain_ids = [];
+    result['rows'].forEach(row => {
+        chain_ids.push(row['chain_id']);
+    })
+
+    console.log("What hotel would you like to book for?");
+    let chain_id = Number(prompt());
+    while (!chain_ids.includes(chain_id)) {
+        console.log("Please enter a valid hotel.");
+        chain_id = prompt();
+    }
+    let year_check_in = prompt("Checkin year?: ");
+    let month_check_in = prompt("Checkin month?: ");
+    let day_check_in = prompt("Checkin day?: ");
+    let year_check_out = prompt("Checkout year?: ");
+    let month_check_out = prompt("Checkout month?: ");
+    let day_check_out = prompt("Checkout day?: ");
+
+    let date_check_out = `${year_check_out}-${month_check_out}-${day_check_out}`
+    let date_check_in = `${year_check_in}-${month_check_in}-${day_check_in}`
+
+    let available_rooms = await pool.query(
+        `SELECT * 
+        FROM ROOM
+        WHERE Room_ID NOT IN 
+        (
+            SELECT Room_ID 
+            FROM   BOOKINGinfo B
+                   
+            WHERE  (date_check_in <= to_timestamp(${date_check_in}) AND date_check_out >= to_timestamp(${date_check_out}))
+                   OR (date_check_in < to_timestamp(${date_check_in}) AND date_check_out >= to_timestamp(${date_check_out}))
+                   OR (to_timestamp(${date_check_in}) <= date_check_in AND to_timestamp(${date_check_out}) >= date_check_in)
+        ) AND chain_id = ${chain_id}`
+      );
+
+    
+    
+    console.log(available_rooms['rows']);
+    available_rooms2 = []
+    available_rooms['rows'].forEach(row => {
+        available_rooms2.push(row['room_id']);
+    })
+
+    console.log("Enter ID of Wanted Room");
+    let r_id = prompt();
+    while (!available_rooms2.includes(Number(r_id))){
+        console.log("Must be a valid Available Room");
+        r_id = prompt();
+    }
+
+    console.log("Enter Occupants");
+    let num_occupants = Number(prompt());
+
+    let room_result = await pool.query(`SELECT * FROM Room where room_id = ${r_id}`)
+    
+    let room_type = room_result['rows'][0]['room_type']
+
+    await pool.query(`INSERT INTO BOOKINGINFO (room_id, room_type, num_occupants, date_check_in, date_check_out, renting, paid)
+    VALUES (${r_id}, '${room_type}', ${num_occupants}, '${date_check_in}', '${date_check_in}', True, False)`);
+
+    await pool.query(`UPDATE Books SET customer_id=${sin} WHERE room_id =${r_id}`);
+
+    console.log("Successfully Made Booking");
+
+    welcome();
+
 }
