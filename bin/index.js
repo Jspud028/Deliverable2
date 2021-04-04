@@ -587,7 +587,7 @@ async function bookRoomWalkIn(employee_id) {
     let room_type = room_result['rows'][0]['room_type']
 
     await pool.query(`INSERT INTO BOOKINGINFO (room_id, room_type, num_occupants, date_check_in, date_check_out, renting, paid)
-    VALUES (${r_id}, '${room_type}', ${num_occupants}, '${date_check_in}', '${date_check_in}', True, False)`);
+    VALUES (${r_id}, '${room_type}', ${num_occupants}, '${date_check_in}', '${date_check_out}', True, False)`);
 
     await pool.query(`UPDATE Books SET customer_id=${sin} WHERE room_id =${r_id}`);
 
@@ -602,6 +602,7 @@ async function insertPayment() {
     console.log('Enter Booking ID');
     let booking_id = Number(prompt())
     await pool.query(`UPDATE BookingInfo SET paid = True WHERE booking_id=${booking_id}`);
+    welcome();
 
 }
 
@@ -758,7 +759,7 @@ async function bookRoomCustomer(sin) {
     let room_type = room_result['rows'][0]['room_type']
 
     await pool.query(`INSERT INTO BOOKINGINFO (room_id, room_type, num_occupants, date_check_in, date_check_out, renting, paid)
-    VALUES (${r_id}, '${room_type}', ${num_occupants}, '${date_check_in}', '${date_check_in}', True, False)`);
+    VALUES (${r_id}, '${room_type}', ${num_occupants}, '${date_check_in}', '${date_check_out}', True, False)`);
 
     await pool.query(`UPDATE Books SET customer_id=${sin} WHERE room_id =${r_id}`);
 
