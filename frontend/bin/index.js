@@ -472,6 +472,53 @@ async function insertEmployee() {
     admin();
 }
 
+async function employee() {
+    console.log("Welcome Employee");
+    let sin = prompt("Please enter your SIN: ");
+    let result = await pool.query(`SELECT * FROM employee WHERE sin_num = ${sin}`);
+    while(len(result["rows"]) == 0){
+        console.log("invalid SIN.");
+        sin = prompt("Please enter your SIN: ");
+        result = await pool.query(`SELECT * FROM employee WHERE sin_num = ${sin}`);
+    }
+    let employee_id = result["rows"][0]["employee_id"] 
+    employeeMenu(employee_id);
+}
+
+async function employeeMenu(employee_id) {
+    console.log("Select 1 to view all rented rooms.");
+    console.log("Select 2 to view all available rooms.");
+    console.log("Select 3 to book a room for a customer.");
+    console.log("Select 4 to insert a customer payment.");
+
+    choice = prompt();
+    while (choice != 1 && choice != 2 && choice != 3 && choice != 4) {
+        console.log("Please enter 1, 2, 3, or 4");
+    }
+    if (choice == 1) {
+        viewRentedRooms(employee_id);
+    } else if (choice == 2) {
+        viewAvailableRooms(employee_id);
+    } else if (choice == 3) {
+        bookRoom(employee_id);
+    } else if (choice == 4) {
+        insertPayment(employee_id);
+    }
+}
+
+async function viewRentedRooms(employee_id) {
+    result = await pool.query(`SELECT * FROM Room WHERE room_id IN (SELECT room_id FROM books WHERE employee_id = ${employee_id} AND customer_id IS NOT NULL)`);
+    console.log(result["rows"]);
+    employeeMenu(employee_id);
+}
+
+async function viewAvailableRooms(employee_id) {
+    result = await pool.query(`SELECT * FROM Room WHERE room_id IN (SELECT room_id FROM books WHERE employee_id = ${employee_id} AND customer_id IS NULL)`);
+    console.log(result["rows"]);
+    employeeMenu(employee_id);
+}
+
+
 function customer() {
     console.log("Are you a current customer or new customer?")
     console.log("1. New")
