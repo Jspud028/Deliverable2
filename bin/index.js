@@ -502,7 +502,7 @@ async function employee() {
 async function employeeMenu(employee_id) {
     console.log("Select 1 to view all rented rooms.");
     console.log("Select 2 to view all available rooms.");
-    console.log("Select 3 to book a room for a customer.");
+    console.log("Select 3 to book a room for a customer (WALK-IN).");
     console.log("Select 4 to insert a customer payment.");
 
     choice = prompt();
@@ -514,7 +514,7 @@ async function employeeMenu(employee_id) {
     } else if (choice == 2) {
         viewAvailableRooms(employee_id);
     } else if (choice == 3) {
-        bookRoom(employee_id);
+        bookRoomWalkIn(employee_id);
     } else if (choice == 4) {
         insertPayment(employee_id);
     }
@@ -532,13 +532,152 @@ async function viewAvailableRooms(employee_id) {
     employeeMenu(employee_id);
 }
 
+async function bookRoomWalkIn(employee_id) {
+    let date_check_in = new Date();
+    let year_check_in = date_check_in.getFullYear();
+    let month_check_in = date_check_in.getMonth() + 1;
+    let day_check_in = date_check_in.getDate();
+    let year_check_out = prompt("Checkout year?: ");
+    let month_check_out = prompt("Checkout month?: ");
+    let day_check_out = prompt("Checkout day?: ");
 
-function customer() {
+    let date_check_out = `${year_check_out}-${month_check_out}-${day_check_out}`
+    date_check_in = `${year_check_in.toString()}-${month_check_in.toString()}-${day_check_in.toString()}`
+
+    let result = await pool.query(
+        `SELECT * 
+        FROM ROOM
+        WHERE Room_ID NOT IN 
+        (
+            SELECT Room_ID 
+            FROM   BOOKINGinfo B
+                   
+            WHERE  (date_check_in <= to_timestamp(${date_check_in}) AND date_check_out >= to_timestamp(${date_check_out}))
+                   OR (date_check_in < to_timestamp(${date_check_in}) AND date_check_out >= to_timestamp(${date_check_out}))
+                   OR (to_timestamp(${date_check_in}) <= date_check_in AND to_timestamp(${date_check_out}) >= date_check_in)
+        ) AND Room_ID IN 
+        ( SELECT room_id 
+            FROM Books bo
+            WHERE bo.employee_id = ${employee_id})`
+      );
+
+    
+    
+    console.log(result['rows']);
+    available_rooms = []
+    result['rows'].forEach(row => {
+        available_rooms.push(row['room_id']);
+    })
+
+    console.log("IMPORTANT: CUSTOMER SIN MUST EXIST");
+    console.log("Enter Customer SIN: ");
+    let sin = prompt();
+
+    console.log("Enter ID of Wanted Room");
+    let r_id = prompt();
+    while (!available_rooms.includes(Number(r_id))){
+        console.log("Must be a valid Available Room");
+        r_id = prompt();
+    }
+    console.log("Enter Occupants");
+    let num_occupants = Number(prompt());
+
+    let room_result = await pool.query(`SELECT * FROM Room where room_id = ${r_id}`)
+    
+    let room_type = room_result['rows'][0]['room_type']
+
+    await pool.query(`INSERT INTO BOOKINGINFO (room_id, room_type, num_occupants, date_check_in, date_check_out, renting, paid)
+    VALUES (${r_id}, '${room_type}', ${num_occupants}, '${date_check_in}', '${date_check_in}', True, False)`);
+
+    await pool.query(`UPDATE Books SET customer_id=${sin} WHERE room_id =${r_id}`);
+
+    console.log("Successfully Made Booking");
+
+    employeeOptions(employee_id);
+}
+
+async function insertPayment() {
+
+    console.log("IMPORTANT: MUST BE A VALID BOOKING ID")
+    console.log('Enter Booking ID');
+    let booking_id = Number(prompt())
+    await pool.query(`UPDATE BookingInfo SET paid = True WHERE booking_id=${booking_id}`);
+
+}
+
+
+async function customer() {
     console.log("Are you a current customer or new customer?")
-    console.log("1. New")
-    console.log("2. Existing")
-    choice = prompt();
+    console.log("1. Existing")
+    console.log("2. New")
+    let choice = prompt();
     while (choice != 1 && choice != 2) {
         console.log("Please enter 1 or 2");
     }
+
+    console.log('Enter SIN Number: ');
+    let sin = prompt();
+    if (choice == 1) {
+        console.log('Enter SIN Number: ');
+        
+        let result = await pool.query(`select * from customer where sin_num = '${sin}'`);
+        if (result['rows'].length == 0) {
+            console.log("Please try again with a valid SIN, or make a new account");
+            customer();
+        }
+    } else if (choice == 2) {
+        let first_name = prompt("First Name: ");
+        let last_name = prompt("Last Name: ");
+        let address = prompt('Address: ');
+        let date_registered = new Date();
+
+        
+        let month_registered = date_registered.getMonth() + 1
+        let day_registered = date_registered.getDate();
+        let year_registered = date_registered.getFullYear();
+
+        await pool.query(`INSERT INTO Customer(sin_num, first_name, last_name, address, date_registered) values
+        ('${sin}', '${first_name}', '${last_name}', 
+        '${address}', '${year_registered.toString()}-${month_registered.toString()}-${day_registered.toString()} `)
+    }
+    customerOptions(sin);
+}
+
+async function customerOptions(sin) {
+    console.log("1. Book a room.");
+    console.log("2. Check-Out");
+    
+    let choice = prompt();
+    while (choice != 1 && choice != 2) {
+        console.log("Please enter 1 or 2");
+    }
+    
+    if (choice == 1) {
+
+    } else if (choice == 2) {
+        viewCustomerBookings(sin)
+    }
+
+
+}
+
+async function viewCustomerBookings(sin) {
+    console.log('Your current Bookings Are:')
+
+    let result = await pool.query(`SELECT * FROM BookingInfo bi WHERE bi.room_id IN
+        (SELECT r.room_id From Room r JOIN Books b ON b.customer_id = '${sin}')`);
+    
+    console.log(result['rows']);
+    
+    checkOut();
+    
+}
+
+async function checkOut() {
+    console.log("Select Booking You Would Like to Check Out Of")
+    let booking_id = Number(prompt());
+
+    await pool.query(`UPDATE BookingInfo SET renting=False where booking_id=${booking_id}`);
+
+    console.log("Successfully Checked Out.")
 }
