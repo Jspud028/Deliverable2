@@ -77,7 +77,7 @@ async function brandOptions(brand_ids) {
     } else if (selection == 4) {
         viewChains(brand_ids);
     } else if (selection == 'q') {
-        admin();
+        welcome();
     }
 }
 
@@ -128,7 +128,7 @@ async function insertBrand() {
     city = prompt("City ");
     zip = prompt("Zip ");
     email = prompt("Email ")
-    Phone_num = prompt("Phone Number ");
+    phone_num = prompt("Phone Number ");
     num_hotels = 0;
 
     await pool.query(`Insert into HotelBrand(brand_name, central_office_location, street_num, street_name, city, zip, email, phone_num, num_hotels) VALUES('${brand_name}','${central_office_location}', '${street_num}', '${street_name}', '${city}', '${zip}', '${email}', '${phone_num}', '${num_hotels}')`);
@@ -180,7 +180,7 @@ async function chainOptions(chain_ids) {
     } else if (selection == 5) {
         viewRooms(chain_ids)
     } else if (selection == 'q') {
-        admin();
+        welcome();
     }
 }
 
@@ -257,9 +257,10 @@ async function viewEmployees(chain_ids) {
     let result = await pool.query(`SELECT * FROM Employee e WHERE e.employee_id IN (SELECT employee_id FROM WorksAt WHERE chain_id = ${Number(c_id)})`)
     let employee_ids = []
     result['rows'].forEach(row => {
-        rooom_ids.push(row['employee_id'])
+        employee_ids.push(row['employee_id'])
     })
 
+    console.log(result['rows']);
     employeeOptions(employee_ids);
 
 }
@@ -275,8 +276,9 @@ async function viewRooms(chain_ids) {
     let result = await pool.query(`SELECT * FROM Room r WHERE r.chain_id = ${Number(c_id)}`)
     let room_ids = []
     result['rows'].forEach(row => {
-        rooom_ids.push(row['room_id'])
+        room_ids.push(row['room_id'])
     })
+    console.log(result['rows']);
 
     roomOptions(room_ids);
 
@@ -303,7 +305,7 @@ async function roomOptions(room_ids) {
         insertRoom()
     } else if (selection == 4) {
         viewBookings(room_ids)
-    } else if (selection == 4) {
+    } else if (selection == 5) {
         viewHistory(room_ids)
     } else if (selection == 'q') {
         admin();
@@ -378,7 +380,7 @@ async function viewBookings(room_ids) {
     })
 
     console.log(result['rows']);
-    admin();
+    welcome();
     
 }
 
@@ -389,10 +391,11 @@ async function viewHistory(room_ids) {
         console.log("Please enter an ID from the current Rooms");
         r_id = prompt();
     }
+    console.log('hello');
     let result = await pool.query(`SELECT * FROM History h WHERE h.room_id = ${Number(r_id)}`);
 
     console.log(result['rows']);
-    roomOptions(room_ids);
+    welcome();
 
 }
 
@@ -470,7 +473,7 @@ async function insertEmployee() {
     first_name = prompt("First Name: ");
     last_name = prompt("Last Name: ");
     street_num = prompt("Street Num: ");
-    street_name = prompt("Street Name");
+    street_name = prompt("Street Name: ");
     city = prompt("City: ");
     prov = prompt("Province: ");
     zip = prompt("Zip: ");
@@ -481,7 +484,7 @@ async function insertEmployee() {
     let chain = await pool.query(`Insert into Employee(sin_num, first_name, last_name,
         street_num, street_name, city, prov, zip, salary, inst_position, works_at) 
     VALUES('${sin_num}', '${first_name}', '${last_name}', '${street_num}', '${street_name}',
-     '${city}', '${prov}', '${zip}', ${salary}, '${inst_position}', '${works_at}'`);
+     '${city}', '${prov}', '${zip}', ${salary}, '${inst_position}', '${works_at}')`);
     console.log("Employee Successfully Inserted");
     admin();
 }
@@ -593,7 +596,7 @@ async function bookRoomWalkIn(employee_id) {
 
     console.log("Successfully Made Booking");
 
-    employeeOptions(employee_id);
+    welcome();
 }
 
 async function insertPayment() {
